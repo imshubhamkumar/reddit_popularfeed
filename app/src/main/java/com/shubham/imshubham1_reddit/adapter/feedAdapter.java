@@ -45,6 +45,7 @@ public class feedAdapter extends RecyclerView.Adapter<feedAdapter.viewHolder> {
     public List<String> imgWidth;
     public List<Boolean> vidStatus;
     public List<String> feedId;
+    public List<String> posturl;
     boolean favStatus = false;
 
     Context context;
@@ -58,6 +59,7 @@ public class feedAdapter extends RecyclerView.Adapter<feedAdapter.viewHolder> {
                        List<String> imgWidth,
                        List<Boolean> vidStatus,
                        List<String> feedId,
+                       List<String> posturl,
                        FeedClickListner feedClickListner,
                        Context context) {
         this.uName = uName;
@@ -69,11 +71,15 @@ public class feedAdapter extends RecyclerView.Adapter<feedAdapter.viewHolder> {
         this.imgWidth = imgWidth;
         this.vidStatus = vidStatus;
         this.feedId = feedId;
+        this.posturl = posturl;
         this.context = context;
         this.feedClickListner = feedClickListner;
     }
 public interface FeedClickListner{
         void favClickListner(String id);
+        void UnFavClickListner(String id);
+        void gotoPost(String url);
+        void shareMe(String link);
 }
 
     @NonNull
@@ -155,11 +161,29 @@ public interface FeedClickListner{
                 if (!ret.contains(feedId)){
                     feedClickListner.favClickListner(feedId);
                     viewHolder.fav.setImageDrawable(context1.getResources().getDrawable(R.drawable.gold_star_24dp));
+                } else {
+                    feedClickListner.UnFavClickListner(feedId);
+                    viewHolder.fav.setImageDrawable(context1.getResources().getDrawable(R.drawable.star_black_24dp));
                 }
 
             }
         });
 
+        final String Posturl = this.posturl.get(i);
+
+        viewHolder.comments.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                feedClickListner.gotoPost(Posturl);
+            }
+        });
+
+        viewHolder.share.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                feedClickListner.shareMe(Posturl);
+            }
+        });
     }
 
     public String readFile(String file){
@@ -207,6 +231,8 @@ public interface FeedClickListner{
             feedImg = itemView.findViewById(R.id.feedImage);
             feedVid = itemView.findViewById(R.id.feedVideo);
             fav = itemView.findViewById(R.id.fav);
+            comments = itemView.findViewById(R.id.comments);
+            share = itemView.findViewById(R.id.share);
 
 
         }

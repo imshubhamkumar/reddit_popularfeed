@@ -1,6 +1,7 @@
 package com.shubham.imshubham1_reddit;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -61,33 +62,88 @@ public class MainActivity extends AppCompatActivity implements feedAdapter.FeedC
 
     @Override
     public void favClickListner(String id) {
-        JSONObject jsonObject = new JSONObject();
-        JSONObject jo = new JSONObject();
-        try {
 
-            File file = new File(getCacheDir(), "favCacheFile.txt");
-            if (file.exists()){
-                String ret = readFile("favCacheFile.txt");
-                jo = new JSONObject(ret);
-                jsonObject = jo.getJSONObject("ids");
-                jsonObject.put("id", id);
-                //jo.put("ids",jsonObject);
-            }else {
-                jsonObject.put("id", id);
-                jo.put("ids",jsonObject);
+        JSONArray jo;
+        JSONArray jsonArray = new JSONArray();
+
+        List<String> list = new ArrayList<>();
+
+        list.add(id);
+        try {
+        File f = new File(MainActivity.this.getFilesDir(), "favCacheFile.txt");
+
+        if (f.exists()){
+            String ret = readFile("favCacheFile.txt");
+            jo = new JSONArray(ret);
+            for (int i =0; i<jo.length(); i++){
+                list.add((String) jo.get(i));
             }
+        }
+
+
+        jsonArray.put(list);
+
 
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        //Toast.makeText(MainActivity.this,jo.toString(),Toast.LENGTH_SHORT).show();
 
 
-        createCacheFile(MainActivity.this,"favCacheFile.txt",jo.toString());
+
+        createCacheFile(MainActivity.this,"favCacheFile.txt",jsonArray.toString());
 
 
+    }
+
+    @Override
+    public void UnFavClickListner(String id) {
+        List<String> list = new ArrayList<>();
+
+        String ret = readFile("favCacheFile.txt");
+
+        try {
+            JSONArray jsonArray = new JSONArray(ret);
+            for (int i = 0; i<jsonArray.length(); i++){
+                list.add((String) jsonArray.get(i));
+            }
+            for (int i = 0; i<list.size(); i++){
+                if (list.get(i) == id){
+                    list.remove(i);
+                }
+            }
+            JSONArray ja = new JSONArray();
+            ja.put(list);
+
+            createCacheFile(MainActivity.this,"favCacheFile.txt",ja.toString());
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        Toast.makeText(MainActivity.this,ret,Toast.LENGTH_SHORT).show();
+
+
+    }
+
+    @Override
+    public void gotoPost(String url) {
+        Intent in = new Intent(MainActivity.this, SingleFeed.class);
+        in.putExtra("url",url);
+        startActivity(in);
+    }
+
+    @Override
+    public void shareMe(String link) {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_SUBJECT, R.string.app_name);
+        String shareMessage= "\nHey Check out this post\n\n";
+        shareMessage = shareMessage + "https://www.reddit.com" + link;
+        shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage);
+        startActivity(Intent.createChooser(shareIntent, "choose one"));
     }
 
     public static String convertStreamToString(InputStream is) throws Exception {
@@ -156,6 +212,7 @@ public class MainActivity extends AppCompatActivity implements feedAdapter.FeedC
         public List<String> imgWidth;
         public List<Boolean> vidStatus;
         public  List<String> feedId;
+        public List<String> posturl;
 
         @Override
         protected String doInBackground(String... urls) {
@@ -187,6 +244,7 @@ public class MainActivity extends AppCompatActivity implements feedAdapter.FeedC
             imgHigh = new ArrayList<>();
             vidStatus = new ArrayList<>();
             feedId = new ArrayList<>();
+            posturl = new ArrayList<>();
 
             try {
                 JO = new JSONObject(result);
@@ -207,6 +265,7 @@ public class MainActivity extends AppCompatActivity implements feedAdapter.FeedC
                     String imgH = "500";
                     String imgW = "600";
                     String vid = "none";
+                    String postUrl = innerObj.getString("permalink");
                     if (innerObj.has("preview")){
                         JSONObject preview = new JSONObject(innerObj.getString("preview"));
                         JSONArray images = new JSONArray(preview.getString("images"));
@@ -243,12 +302,13 @@ public class MainActivity extends AppCompatActivity implements feedAdapter.FeedC
                     imgHigh.add(imgH);
                     vidStatus.add(isVid);
                     feedId.add(fId);
+                    posturl.add(postUrl);
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
-            MainActivity.adapter = new feedAdapter(uName,createTime,feedTitle,feedImg,feedVid,imgHigh,imgWidth,vidStatus,feedId, MainActivity.this,MainActivity.this);
+            MainActivity.adapter = new feedAdapter(uName,createTime,feedTitle,feedImg,feedVid,imgHigh,imgWidth,vidStatus,feedId,posturl, MainActivity.this,MainActivity.this);
             MainActivity.feedList.setAdapter(adapter);
         }
     }
